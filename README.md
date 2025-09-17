@@ -105,7 +105,7 @@ imgc  # Uses environment variables
 - **JPEG** (.jpg, .jpeg) - Quality-based compression
 - **PNG** (.png) - Lossless optimization with configurable compression levels
 - **WebP** (.webp) - Modern format with excellent compression
-- **AVIF** (.avif) - Next-generation format with superior compression
+- **AVIF** (.avif) - Next-generation format with superior compression (requires imageio)
 
 ## Development
 
@@ -113,6 +113,7 @@ imgc  # Uses environment variables
 
 - Python 3.8+
 - See `requirements.txt` for dependencies
+- Optional: `pngquant` binary for enhanced PNG compression
 
 ### Development Setup
 

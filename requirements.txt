@@ -1,7 +1,7 @@
 watchdog>=3.0.0
 Pillow>=10.0.0
 # Optional (for AVIF writing or better PNG):
-# imageio
+imageio>=2.30.0
 # pngquant can be installed separately on Windows and is invoked as an external binary
 pytest>=7.0
 coverage>=7.0
