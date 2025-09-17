@@ -88,7 +88,7 @@ test: install
 	@$(PY) -m pip install pytest
 	$(PY) -m pytest -q
 
-coverage: venv
+coverage: install
 	@echo "Running tests with coverage"
 	@$(PY) -m pip install coverage pytest
 	@$(PY) -m coverage run -m pytest
