@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.0.3]
+
+### Added
+- Full AVIF format support with imageio integration
+- Code coverage reporting with Codecov integration
+- Coverage badge in README.md
+- Comprehensive integration test suite with real image processing scenarios
+- Dependabot configuration for automated dependency updates
+- Security-focused Dependabot workflows for vulnerability management
+- Coverage configuration file (.coveragerc) for optimized reporting
+- Enhanced error handling for AVIF processing with specific ImportError handling
+
+### Changed
+- **BREAKING**: imageio is now a required dependency (was optional/commented)
+- Upgraded AVIF processing to use imageio v3 API for better reliability
+- Enhanced CI workflow to run coverage tests and upload results to Codecov
+- Improved README documentation with coverage information and AVIF requirements
+- Updated Makefile with coverage target and help text
+- Better error messages for AVIF compression failures
+- Test suite now expects AVIF compression to succeed (was expecting failure)
+
+### Fixed
+- AVIF compression now works reliably with proper imageio v3 API usage
+- AVIF quality parameter handling (uses default settings due to imageio limitations)
+- Enhanced test coverage across all image processing scenarios
+
+### Technical Details
+- imageio v3 API provides cleaner interface: `iio.imwrite(file, data, extension='.avif')`
+- Coverage integration generates XML reports for CI and HTML reports for local development
+- Dependabot monitors both GitHub Actions and Python dependencies
+- Integration tests cover real-world scenarios: bulk processing, concurrent operations, error handling
+
 ## [v0.0.2]
 
 ### Added
