@@ -57,6 +57,7 @@ help:
 	@echo "  make test       - run all tests"
 	@echo "  make test-unit  - run unit tests only (excludes integration)"
 	@echo "  make test-integration - run integration tests with real images"
+	@echo "  make coverage   - run tests with coverage report"
 	@echo "  make lint       - run quick syntax checks (py_compile)"
 	@echo "  make build      - build a standalone binary using PyInstaller"
 	@echo "  make package    - create a zip of the built binary (dist)"

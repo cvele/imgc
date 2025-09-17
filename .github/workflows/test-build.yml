@@ -24,8 +24,17 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies and run tests
-        run: make test
+      - name: Install dependencies and run tests with coverage
+        run: make coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Install PyInstaller for build test
         shell: bash

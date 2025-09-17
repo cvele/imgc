@@ -65,13 +65,18 @@ class Compressor:
                 tmp.replace(path)
             elif path.suffix.lower() == '.avif':
                 try:
-                    import imageio
+                    import imageio.v3 as iio
                     img = Image.open(path)
                     arr = img.convert('RGB')
-                    imageio.imwrite(str(tmp), arr, format='AVIF', quality=self.avif_quality)
+                    # Note: AVIF quality parameter not supported in current imageio version
+                    # Uses default compression settings
+                    iio.imwrite(str(tmp), arr, extension='.avif')
                     tmp.replace(path)
-                except Exception:
-                    logger.warning('AVIF write not supported; skipping')
+                except ImportError:
+                    logger.warning('imageio not installed; AVIF compression skipped')
+                    return None
+                except Exception as e:
+                    logger.warning('AVIF write failed: %s', e)
                     return None
             else:
                 return None
