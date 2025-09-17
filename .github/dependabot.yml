@@ -1,0 +1,101 @@
+# Dependabot configuration for imgc
+# Automatically keeps dependencies up to date by creating pull requests
+
+version: 2
+updates:
+  # Monitor Python dependencies in requirements.txt
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "cvele"
+    assignees:
+      - "cvele"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      python-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Allow certain dependencies to be updated more frequently
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    # Ignore certain dependencies if needed
+    ignore:
+      # Example: ignore major version updates for PIL/Pillow
+      # - dependency-name: "Pillow"
+      #   update-types: ["version-update:semver-major"]
+      
+  # Monitor GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "cvele"
+    assignees:
+      - "cvele"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+    # Group GitHub Actions updates
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+# Configuration notes:
+# 
+# 1. Python Dependencies:
+#    - Monitors requirements.txt for direct dependencies
+#    - Groups minor/patch updates to reduce PR noise
+#    - Runs weekly on Mondays at 9 AM UTC
+#    - Creates up to 5 PRs at a time
+#    
+# 2. GitHub Actions:
+#    - Monitors .github/workflows/ for action updates
+#    - Groups updates to reduce noise
+#    - Runs weekly on same schedule
+#    - Creates up to 3 PRs at a time
+#
+# 3. Pull Request Management:
+#    - Auto-assigns to project maintainer
+#    - Uses descriptive commit prefixes (deps/ci)
+#    - Applies relevant labels for easy filtering
+#    - Includes scope in commit messages
+#
+# 4. Security Updates:
+#    - Dependabot automatically creates security updates
+#    - These bypass the schedule and limits
+#    - Security updates get higher priority
+#
+# 5. Customization:
+#    - Uncomment ignore rules to skip specific updates
+#    - Adjust schedule/limits based on project needs
+#    - Modify reviewers/assignees as team grows

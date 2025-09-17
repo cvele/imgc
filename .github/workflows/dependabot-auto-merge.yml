@@ -1,0 +1,98 @@
+# Auto-merge Dependabot PRs for minor and patch updates
+# This workflow automatically merges Dependabot PRs after tests pass
+# Only applies to minor/patch updates, not major version changes
+
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Wait for tests to complete
+        uses: fountainhead/action-wait-for-check@v1.2.0
+        id: wait-for-tests
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "Test Build (ubuntu-latest)"  # Wait for at least one platform to complete
+          ref: ${{ github.event.pull_request.head.sha }}
+          timeoutSeconds: 1200  # Wait up to 20 minutes
+          intervalSeconds: 30
+      
+      - name: Auto-merge minor and patch updates
+        if: |
+          steps.wait-for-tests.outputs.conclusion == 'success' && 
+          (steps.metadata.outputs.update-type == 'version-update:semver-minor' || 
+           steps.metadata.outputs.update-type == 'version-update:semver-patch')
+        run: |
+          echo "Auto-merging ${{ steps.metadata.outputs.dependency-names }} update"
+          gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Comment on major updates
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-major'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚨 **Major version update detected for ${{ steps.metadata.outputs.dependency-names }}**
+              
+              This PR updates a dependency to a new major version, which may include breaking changes.
+              Please review the changelog and test thoroughly before merging.
+              
+              **Update type:** ${{ steps.metadata.outputs.update-type }}
+              **From version:** ${{ steps.metadata.outputs.previous-version }}
+              **To version:** ${{ steps.metadata.outputs.new-version }}
+              
+              This PR will **not** be auto-merged and requires manual review.`
+            })
+      
+      - name: Auto-approve minor/patch updates
+        if: |
+          steps.wait-for-tests.outputs.conclusion == 'success' && 
+          (steps.metadata.outputs.update-type == 'version-update:semver-minor' || 
+           steps.metadata.outputs.update-type == 'version-update:semver-patch')
+        run: |
+          gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Workflow behavior:
+#
+# 1. Triggers only on Dependabot PRs
+# 2. Waits for the main test workflow to complete
+# 3. For minor/patch updates:
+#    - Auto-approves if tests pass
+#    - Auto-merges using squash merge
+# 4. For major updates:
+#    - Adds a comment explaining the risk
+#    - Requires manual review and merge
+# 5. Security updates are handled normally by Dependabot
+#
+# Benefits:
+# - Reduces maintenance overhead
+# - Ensures tests pass before merging
+# - Maintains safety for breaking changes
+# - Keeps dependencies up to date automatically
