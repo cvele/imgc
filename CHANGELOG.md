@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.0.2]
+
+### Added
+- `--process-existing` flag to enable processing of existing images on startup
+- `IMGC_PROCESS_EXISTING` environment variable support
+- Watch-only mode as the new default behavior (existing images are skipped)
+- Better path validation with helpful error messages
+
+### Changed
+- **BREAKING**: Default behavior changed from processing existing images to watch-only mode
+- Improved code quality by removing unnecessary `globals()` usage
+- Extracted environment variable parsing logic into testable functions
+- Made boolean parsing more maintainable with explicit constants
+
+### Fixed
+- Windows path handling for paths ending with backslashes
+- PyInstaller PIL/Pillow dependency inclusion for binary builds
+
 ## [v0.0.1]
 
 ### Added

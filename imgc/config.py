@@ -26,3 +26,6 @@ DEFAULT_LOG_DIR = str(Path(__file__).resolve().parents[1] / 'logs')
 DEFAULT_LOG_FILENAME = 'imgc.log'
 # Default log level: one of 'debug', 'info', 'warning', 'quiet'
 DEFAULT_LOG_LEVEL = 'info'
+
+# Processing behavior
+DEFAULT_PROCESS_EXISTING = False  # Whether to process existing files on startup

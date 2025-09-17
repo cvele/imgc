@@ -122,3 +122,204 @@ def test_start_watch_mirrors_lifecycle(monkeypatch, tmp_path, caplog):
         time.sleep(0.05)
     
     assert finished['done'] is True
+
+
+def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
+    """Test that process_existing flag controls whether existing files are processed."""
+    # Set logging level to capture info messages
+    caplog.set_level('INFO')
+    # Create some test images
+    test_files = []
+    for i in range(3):
+        img_path = tmp_path / f'test{i}.jpg'
+        img_path.write_bytes(b'fake_image_data')
+        test_files.append(img_path)
+
+    # Mock Observer
+    observers = []
+    
+    class DummyObserver:
+        def __init__(self):
+            self.started = False
+            observers.append(self)
+        def schedule(self, handler, path, recursive=True):
+            self.scheduled = (handler, path, recursive)
+        def start(self):
+            self.started = True
+        def stop(self):
+            self.started = False
+        def join(self, timeout=None):
+            return
+
+    monkeypatch.setattr(watcher_mod, 'Observer', DummyObserver)
+    monkeypatch.setattr(watcher_mod.signal, 'signal', lambda sig, handler: None)
+
+    # Mock process_existing to track if it was called
+    process_existing_called = {'count': 0}
+    original_process_existing = watcher_mod.process_existing
+    
+    def mock_process_existing(root, handler):
+        process_existing_called['count'] += 1
+        # Don't actually process, just record the call
+    monkeypatch.setattr(watcher_mod, 'process_existing', mock_process_existing)
+
+    # No-op compressor
+    class NoopComp:
+        def compress(self, p):
+            return {'new': 1}
+
+    stop_event = threading.Event()
+
+    # Test 1: Default behavior (process_existing=False)
+    finished = {'done': False}
+    
+    def runner_watch_only():
+        try:
+            start_watch(tmp_path, NoopComp(), scan_existing=False, stop_event=stop_event)
+        finally:
+            finished['done'] = True
+
+    t1 = threading.Thread(target=runner_watch_only, daemon=True)
+    caplog.clear()
+    t1.start()
+    
+    # Wait for observer to start
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        if observers and getattr(observers[0], 'scheduled', None):
+            break
+        time.sleep(0.01)
+    
+    # Give a moment for any background processing
+    time.sleep(0.1)
+    
+    # Stop the watcher
+    stop_event.set()
+    
+    # Wait for completion
+    deadline = time.time() + 2
+    while time.time() < deadline and not finished['done']:
+        time.sleep(0.05)
+    
+    # Verify process_existing was NOT called (watch-only mode)
+    assert process_existing_called['count'] == 0
+    # Check for the log message (it might be in different log levels)
+    log_messages = [record.message for record in caplog.records]
+    watch_only_logged = any('Watch-only mode' in msg for msg in log_messages)
+    assert watch_only_logged, f"Expected watch-only mode message in logs. Got: {log_messages}"
+    assert finished['done'] is True
+
+    # Reset for test 2
+    process_existing_called['count'] = 0
+    finished['done'] = False
+    stop_event.clear()
+    observers.clear()
+    
+    # Test 2: With process_existing=True
+    def runner_process_existing():
+        try:
+            start_watch(tmp_path, NoopComp(), scan_existing=True, stop_event=stop_event)
+        finally:
+            finished['done'] = True
+
+    t2 = threading.Thread(target=runner_process_existing, daemon=True)
+    caplog.clear()
+    t2.start()
+    
+    # Wait for observer to start
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        if observers and getattr(observers[0], 'scheduled', None):
+            break
+        time.sleep(0.01)
+    
+    # Give time for background processing to start
+    time.sleep(0.1)
+    
+    # Stop the watcher
+    stop_event.set()
+    
+    # Wait for completion
+    deadline = time.time() + 2
+    while time.time() < deadline and not finished['done']:
+        time.sleep(0.05)
+    
+    # Verify process_existing WAS called
+    assert process_existing_called['count'] == 1
+    # Check for the log message (it might be in different log levels)
+    log_messages = [record.message for record in caplog.records]
+    processing_enabled_logged = any('Processing existing images enabled' in msg for msg in log_messages)
+    assert processing_enabled_logged, f"Expected processing enabled message in logs. Got: {log_messages}"
+    assert finished['done'] is True
+
+
+def test_environment_variable_parsing_functions():
+    """Test the actual environment variable parsing functions from main.py."""
+    import os
+    from main import _env_bool, _env_str, _env_int, _env_float, ENV_TRUE_VALUES
+    
+    # Test boolean parsing with various values
+    # Generate test cases from the actual constant plus some false cases
+    true_cases = [(val, True) for val in ENV_TRUE_VALUES] + [(val.upper(), True) for val in ENV_TRUE_VALUES]
+    false_cases = [('false', False), ('False', False), ('FALSE', False), ('0', False), 
+                   ('no', False), ('NO', False), ('off', False), ('OFF', False), 
+                   ('', False), ('random', False), ('invalid', False)]
+    bool_test_cases = true_cases + false_cases
+    
+    for env_value, expected_bool in bool_test_cases:
+        # Set environment variable
+        original_value = os.environ.get('TEST_BOOL')
+        try:
+            os.environ['TEST_BOOL'] = env_value
+            result = _env_bool('TEST_BOOL', False)
+            assert result == expected_bool, f"_env_bool with '{env_value}' should return {expected_bool}, got {result}"
+        finally:
+            # Restore original environment
+            if original_value is None:
+                os.environ.pop('TEST_BOOL', None)
+            else:
+                os.environ['TEST_BOOL'] = original_value
+    
+    # Test string parsing
+    original_value = os.environ.get('TEST_STR')
+    try:
+        os.environ['TEST_STR'] = 'test_value'
+        assert _env_str('TEST_STR', 'default') == 'test_value'
+        assert _env_str('NONEXISTENT', 'default') == 'default'
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_STR', None)
+        else:
+            os.environ['TEST_STR'] = original_value
+    
+    # Test integer parsing
+    original_value = os.environ.get('TEST_INT')
+    try:
+        os.environ['TEST_INT'] = '42'
+        assert _env_int('TEST_INT', 0) == 42
+        assert _env_int('NONEXISTENT', 10) == 10
+        
+        # Test empty string handling
+        os.environ['TEST_INT'] = ''
+        assert _env_int('TEST_INT', 5) == 5
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_INT', None)
+        else:
+            os.environ['TEST_INT'] = original_value
+    
+    # Test float parsing
+    original_value = os.environ.get('TEST_FLOAT')
+    try:
+        os.environ['TEST_FLOAT'] = '3.14'
+        assert _env_float('TEST_FLOAT', 0.0) == 3.14
+        assert _env_float('NONEXISTENT', 2.5) == 2.5
+        
+        # Test empty string handling
+        os.environ['TEST_FLOAT'] = ''
+        assert _env_float('TEST_FLOAT', 1.5) == 1.5
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_FLOAT', None)
+        else:
+            os.environ['TEST_FLOAT'] = original_value

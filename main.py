@@ -18,19 +18,39 @@ from imgc.logging_config import configure_logging
 logging.basicConfig(level=logging.INFO, format='[imgc] %(message)s')
 logger = logging.getLogger(__name__)
 
+# Environment variable parsing constants
+ENV_TRUE_VALUES = {'true', '1', 'yes', 'on'}
+
+
+def _env_str(name, default=None):
+    """Get string environment variable."""
+    return os.environ.get(name, default)
+
+def _env_int(name, default=None):
+    """Get integer environment variable with error handling."""
+    v = os.environ.get(name)
+    return int(v) if v is not None and v != '' else default
+
+def _env_float(name, default=None):
+    """Get float environment variable with error handling."""
+    v = os.environ.get(name)
+    return float(v) if v is not None and v != '' else default
+
+def _env_bool(name, default=False):
+    """Get boolean environment variable with multiple accepted formats.
+    
+    Accepted true values: 'true', '1', 'yes', 'on' (case-insensitive)
+    All other values are considered false.
+    """
+    value = _env_str(name, default)
+    if value == default:
+        return default
+    return str(value).lower() in ENV_TRUE_VALUES
+
 
 def main():
     # Allow environment variables to provide defaults (executor-friendly).
     # Naming: IMGC_<OPTION_NAME>, e.g. IMGC_ROOT, IMGC_JPEG_QUALITY
-    env = os.environ
-    def _env_str(name, default=None):
-        return env.get(name, default)
-    def _env_int(name, default=None):
-        v = env.get(name)
-        return int(v) if v is not None and v != '' else default
-    def _env_float(name, default=None):
-        v = env.get(name)
-        return float(v) if v is not None and v != '' else default
 
     env_root = _env_str('IMGC_ROOT', None)
     env_jpeg = _env_int('IMGC_JPEG_QUALITY', config.DEFAULT_JPEG_QUALITY)
@@ -45,6 +65,7 @@ def main():
     env_compress_timeout = _env_float('IMGC_COMPRESS_TIMEOUT', config.DEFAULT_COMPRESS_TIMEOUT)
     env_log_file = _env_str('IMGC_LOG_FILE', str(Path(config.DEFAULT_LOG_DIR) / config.DEFAULT_LOG_FILENAME))
     env_log_level = _env_str('IMGC_LOG_LEVEL', config.DEFAULT_LOG_LEVEL)
+    env_process_existing = _env_bool('IMGC_PROCESS_EXISTING', config.DEFAULT_PROCESS_EXISTING)
 
     parser = argparse.ArgumentParser(description='Image auto-compress watcher (delegates to imgc package)')
     # Make --root optional at argparse level but enforce presence below so we can give a clear error
@@ -60,6 +81,7 @@ def main():
     parser.add_argument('--workers', type=int, default=env_workers, help='Number of worker threads to use when processing existing files')
     parser.add_argument('--file-timeout', type=float, default=env_file_timeout, help='Timeout (seconds) to wait for a file to stabilize during initial pass; 0 = no wait (fast)')
     parser.add_argument('--compress-timeout', type=float, default=env_compress_timeout, help='Per-file compression timeout in seconds; 0 = no timeout')
+    parser.add_argument('--process-existing', action='store_true', default=env_process_existing, help='Process existing images on startup (default: watch-only mode)')
     parser.add_argument('--log-file', type=str, default=env_log_file, help='Path to log file (optional). Can be set via IMGC_LOG_FILE env var')
     parser.add_argument('--log-level', type=str, default=env_log_level, choices=['debug', 'info', 'warning', 'quiet'], help='Logging level (or set IMGC_LOG_LEVEL env var)')
     args = parser.parse_args()
@@ -71,8 +93,17 @@ def main():
     if not args.root:
         parser.error('Root directory not provided. Set --root or IMGC_ROOT environment variable to the directory to watch.')
 
+    # Normalize the path to handle Windows trailing backslashes and other path issues
+    root_path = Path(args.root).resolve()
+    
+    # Validate that the directory exists
+    if not root_path.exists():
+        parser.error(f'Root directory does not exist: {root_path}')
+    if not root_path.is_dir():
+        parser.error(f'Root path is not a directory: {root_path}')
+
     compressor = Compressor(jpeg_quality=args.jpeg_quality, png_min=args.png_min, png_max=args.png_max, webp_quality=args.webp_quality, avif_quality=args.avif_quality)
-    start_watch(Path(args.root), compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout)
+    start_watch(root_path, compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout, scan_existing=args.process_existing)
 
 
 if __name__ == '__main__':
