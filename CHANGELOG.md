@@ -1,0 +1,41 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- Cross-platform GitHub Actions release workflow
+- Support for Windows, Linux, and macOS builds (x64 and ARM64)
+- Automatic changelog generation in releases
+- Binary checksums in releases
+
+### Changed
+- Improved Makefile for cross-platform PyInstaller builds
+- Fixed Windows-specific watchdog observer imports
+
+### Fixed
+- Test compatibility issues with threading and event handling
+- Cross-platform build compatibility
+
+## [Initial] - Development Version
+
+### Added
+- Image compression watcher with support for JPEG, PNG, WebP, and AVIF
+- File system monitoring using watchdog
+- Configurable compression settings
+- Multi-threaded processing
+- Signal handling for graceful shutdown
+- Comprehensive test suite
+- Cross-platform compatibility (Windows, macOS, Linux)
+
+### Features
+- Automatic image compression on file creation
+- Configurable quality settings for different formats
+- Stable file detection (waits for file writes to complete)
+- Cooldown periods to prevent repeated processing
+- Timeout handling for compression operations
+- Detailed logging and progress reporting
