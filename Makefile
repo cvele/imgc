@@ -46,7 +46,7 @@ endif
 	
 	PYI_HIDDEN_IMPORTS := $(PYI_HIDDEN_IMPORTS_COMMON) $(PYI_HIDDEN_IMPORTS_PLATFORM)
 
-.PHONY: help venv install install-dev run test lint format clean release check-release
+.PHONY: help venv install install-dev run test test-unit test-integration lint format clean release check-release
 
 help:
 	@echo "Makefile targets for this project"
@@ -54,7 +54,9 @@ help:
 	@echo "  make install    - create venv and install requirements"
 	@echo "  make install-dev - create venv and install with dev dependencies"
 	@echo "  make run ARGS='--root /path' - run watcher with arguments"
-	@echo "  make test       - run pytest"
+	@echo "  make test       - run all tests"
+	@echo "  make test-unit  - run unit tests only (excludes integration)"
+	@echo "  make test-integration - run integration tests with real images"
 	@echo "  make lint       - run quick syntax checks (py_compile)"
 	@echo "  make build      - build a standalone binary using PyInstaller"
 	@echo "  make package    - create a zip of the built binary (dist)"
@@ -86,7 +88,17 @@ run:
 test: install
 	@echo "Ensuring pytest is installed in the virtualenv"
 	@$(PY) -m pip install pytest
-	$(PY) -m pytest -q
+	$(PY) -m pytest -v
+
+test-unit: install
+	@echo "Running unit tests only"
+	@$(PY) -m pip install pytest
+	$(PY) -m pytest -q --ignore=tests/test_integration.py
+
+test-integration: install
+	@echo "Running integration tests with real images"
+	@$(PY) -m pip install pytest
+	$(PY) -m pytest -q tests/test_integration.py
 
 coverage: install
 	@echo "Running tests with coverage"
@@ -161,7 +173,7 @@ check-release:
 		echo "Error: Tag $(VERSION) already exists"; \
 		exit 1; \
 	fi
-	@echo "✅ Release checks passed for $(VERSION)"
+	@echo "Release checks passed for $(VERSION)"
 
 release: check-release test
 	@echo "Creating release $(VERSION)..."
@@ -173,7 +185,7 @@ release: check-release test
 	@git tag -a "$(VERSION)" -m "Release $(VERSION)"
 	@git push origin "$(VERSION)"
 	@echo ""
-	@echo "✅ Release tag $(VERSION) created and pushed!"
+	@echo "Release tag $(VERSION) created and pushed!"
 	@echo ""
 	@echo "The GitHub Actions workflow will now:"
 	@echo "  1. Build binaries for all platforms (Windows, Linux, macOS)"
