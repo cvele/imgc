@@ -38,8 +38,9 @@ Download the latest release for your platform from [Releases](https://github.com
 chmod +x imgc-linux-x64
 ./imgc-linux-x64 --root /path/to/watch
 
-# Windows
-imgc-windows-x64.exe --root C:\path\to\watch
+# Windows (both formats work)
+imgc-windows-x64.exe --root "C:\path\to\watch"
+imgc-windows-x64.exe --root C:/path/to/watch
 ```
 
 ### Installation from Source
@@ -54,14 +55,17 @@ make run ARGS="--root /path/to/watch"  # Run with arguments
 ## Usage Examples
 
 ```bash
-# Watch a directory with default settings
+# Watch a directory with default settings (watch-only mode)
 imgc --root /home/user/images
 
-# Custom compression quality
-imgc --root /home/user/images --jpeg-quality 85 --webp-quality 80
+# Process existing images on startup, then watch for new ones
+imgc --root /home/user/images --process-existing
+
+# Custom compression quality with existing image processing
+imgc --root /home/user/images --process-existing --jpeg-quality 85 --webp-quality 80
 
 # Multi-threaded processing with custom timeouts
-imgc --root /home/user/images --workers 4 --compress-timeout 30
+imgc --root /home/user/images --process-existing --workers 4 --compress-timeout 30
 
 # Quiet mode with file logging
 imgc --root /home/user/images --log-level quiet --log-file imgc.log
@@ -81,6 +85,7 @@ imgc --root /home/user/images --log-level quiet --log-file imgc.log
 | `--stable-seconds` | 2.0 | Time to wait for file stability |
 | `--new-delay` | 0.0 | Delay before processing new files |
 | `--compress-timeout` | 30.0 | Per-file compression timeout (seconds) |
+| `--process-existing` | false | Process existing images on startup |
 | `--log-level` | info | Logging level: debug, info, warning, quiet |
 
 ### Environment Variables
@@ -91,6 +96,7 @@ All options can be set via environment variables with the `IMGC_` prefix:
 export IMGC_ROOT="/home/user/images"
 export IMGC_JPEG_QUALITY=90
 export IMGC_WORKERS=4
+export IMGC_PROCESS_EXISTING=true
 imgc  # Uses environment variables
 ```
 

@@ -45,6 +45,7 @@ def main():
     env_compress_timeout = _env_float('IMGC_COMPRESS_TIMEOUT', config.DEFAULT_COMPRESS_TIMEOUT)
     env_log_file = _env_str('IMGC_LOG_FILE', str(Path(config.DEFAULT_LOG_DIR) / config.DEFAULT_LOG_FILENAME))
     env_log_level = _env_str('IMGC_LOG_LEVEL', config.DEFAULT_LOG_LEVEL)
+    env_process_existing = _env_str('IMGC_PROCESS_EXISTING', 'false').lower() in ('true', '1', 'yes', 'on')
 
     parser = argparse.ArgumentParser(description='Image auto-compress watcher (delegates to imgc package)')
     # Make --root optional at argparse level but enforce presence below so we can give a clear error
@@ -60,6 +61,7 @@ def main():
     parser.add_argument('--workers', type=int, default=env_workers, help='Number of worker threads to use when processing existing files')
     parser.add_argument('--file-timeout', type=float, default=env_file_timeout, help='Timeout (seconds) to wait for a file to stabilize during initial pass; 0 = no wait (fast)')
     parser.add_argument('--compress-timeout', type=float, default=env_compress_timeout, help='Per-file compression timeout in seconds; 0 = no timeout')
+    parser.add_argument('--process-existing', action='store_true', default=env_process_existing, help='Process existing images on startup (default: watch-only mode)')
     parser.add_argument('--log-file', type=str, default=env_log_file, help='Path to log file (optional). Can be set via IMGC_LOG_FILE env var')
     parser.add_argument('--log-level', type=str, default=env_log_level, choices=['debug', 'info', 'warning', 'quiet'], help='Logging level (or set IMGC_LOG_LEVEL env var)')
     args = parser.parse_args()
@@ -71,8 +73,17 @@ def main():
     if not args.root:
         parser.error('Root directory not provided. Set --root or IMGC_ROOT environment variable to the directory to watch.')
 
+    # Normalize the path to handle Windows trailing backslashes and other path issues
+    root_path = Path(args.root).resolve()
+    
+    # Validate that the directory exists
+    if not root_path.exists():
+        parser.error(f'Root directory does not exist: {root_path}')
+    if not root_path.is_dir():
+        parser.error(f'Root path is not a directory: {root_path}')
+
     compressor = Compressor(jpeg_quality=args.jpeg_quality, png_min=args.png_min, png_max=args.png_max, webp_quality=args.webp_quality, avif_quality=args.avif_quality)
-    start_watch(Path(args.root), compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout)
+    start_watch(root_path, compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout, process_existing=args.process_existing)
 
 
 if __name__ == '__main__':

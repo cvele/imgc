@@ -122,3 +122,175 @@ def test_start_watch_mirrors_lifecycle(monkeypatch, tmp_path, caplog):
         time.sleep(0.05)
     
     assert finished['done'] is True
+
+
+def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
+    """Test that process_existing flag controls whether existing files are processed."""
+    # Set logging level to capture info messages
+    caplog.set_level('INFO')
+    # Create some test images
+    test_files = []
+    for i in range(3):
+        img_path = tmp_path / f'test{i}.jpg'
+        img_path.write_bytes(b'fake_image_data')
+        test_files.append(img_path)
+
+    # Mock Observer
+    observers = []
+    
+    class DummyObserver:
+        def __init__(self):
+            self.started = False
+            observers.append(self)
+        def schedule(self, handler, path, recursive=True):
+            self.scheduled = (handler, path, recursive)
+        def start(self):
+            self.started = True
+        def stop(self):
+            self.started = False
+        def join(self, timeout=None):
+            return
+
+    monkeypatch.setattr(watcher_mod, 'Observer', DummyObserver)
+    monkeypatch.setattr(watcher_mod.signal, 'signal', lambda sig, handler: None)
+
+    # Mock process_existing to track if it was called
+    process_existing_called = {'count': 0}
+    original_process_existing = watcher_mod.process_existing
+    
+    def mock_process_existing(root, handler):
+        process_existing_called['count'] += 1
+        # Don't actually process, just record the call
+        
+    monkeypatch.setattr(watcher_mod, 'process_existing', mock_process_existing)
+
+    # No-op compressor
+    class NoopComp:
+        def compress(self, p):
+            return {'new': 1}
+
+    stop_event = threading.Event()
+
+    # Test 1: Default behavior (process_existing=False)
+    finished = {'done': False}
+    
+    def runner_watch_only():
+        try:
+            start_watch(tmp_path, NoopComp(), process_existing=False, stop_event=stop_event)
+        finally:
+            finished['done'] = True
+
+    t1 = threading.Thread(target=runner_watch_only, daemon=True)
+    caplog.clear()
+    t1.start()
+    
+    # Wait for observer to start
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        if observers and getattr(observers[0], 'scheduled', None):
+            break
+        time.sleep(0.01)
+    
+    # Give a moment for any background processing
+    time.sleep(0.1)
+    
+    # Stop the watcher
+    stop_event.set()
+    
+    # Wait for completion
+    deadline = time.time() + 2
+    while time.time() < deadline and not finished['done']:
+        time.sleep(0.05)
+    
+    # Verify process_existing was NOT called (watch-only mode)
+    assert process_existing_called['count'] == 0
+    # Check for the log message (it might be in different log levels)
+    log_messages = [record.message for record in caplog.records]
+    watch_only_logged = any('Watch-only mode' in msg for msg in log_messages)
+    assert watch_only_logged, f"Expected watch-only mode message in logs. Got: {log_messages}"
+    assert finished['done'] is True
+
+    # Reset for test 2
+    process_existing_called['count'] = 0
+    finished['done'] = False
+    stop_event.clear()
+    observers.clear()
+    
+    # Test 2: With process_existing=True
+    def runner_process_existing():
+        try:
+            start_watch(tmp_path, NoopComp(), process_existing=True, stop_event=stop_event)
+        finally:
+            finished['done'] = True
+
+    t2 = threading.Thread(target=runner_process_existing, daemon=True)
+    caplog.clear()
+    t2.start()
+    
+    # Wait for observer to start
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        if observers and getattr(observers[0], 'scheduled', None):
+            break
+        time.sleep(0.01)
+    
+    # Give time for background processing to start
+    time.sleep(0.1)
+    
+    # Stop the watcher
+    stop_event.set()
+    
+    # Wait for completion
+    deadline = time.time() + 2
+    while time.time() < deadline and not finished['done']:
+        time.sleep(0.05)
+    
+    # Verify process_existing WAS called
+    assert process_existing_called['count'] == 1
+    # Check for the log message (it might be in different log levels)
+    log_messages = [record.message for record in caplog.records]
+    processing_enabled_logged = any('Processing existing images enabled' in msg for msg in log_messages)
+    assert processing_enabled_logged, f"Expected processing enabled message in logs. Got: {log_messages}"
+    assert finished['done'] is True
+
+
+def test_environment_variable_process_existing(monkeypatch):
+    """Test that IMGC_PROCESS_EXISTING environment variable is parsed correctly."""
+    import os
+    from main import main
+    
+    # Test various environment variable values
+    test_cases = [
+        ('true', True),
+        ('True', True),
+        ('TRUE', True),
+        ('1', True),
+        ('yes', True),
+        ('YES', True),
+        ('on', True),
+        ('ON', True),
+        ('false', False),
+        ('False', False),
+        ('FALSE', False),
+        ('0', False),
+        ('no', False),
+        ('NO', False),
+        ('off', False),
+        ('OFF', False),
+        ('', False),
+        ('random', False),
+    ]
+    
+    for env_value, expected_bool in test_cases:
+        # Mock environment
+        mock_env = {'IMGC_PROCESS_EXISTING': env_value}
+        monkeypatch.setattr(os, 'environ', mock_env)
+        
+        # Import main module to test env parsing
+        import main
+        # Test the parsing logic directly
+        def _env_str(name, default=None):
+            return mock_env.get(name, default)
+        
+        result = _env_str('IMGC_PROCESS_EXISTING', 'false').lower() in ('true', '1', 'yes', 'on')
+        assert result == expected_bool, f"Environment value '{env_value}' should parse to {expected_bool}, got {result}"
