@@ -18,6 +18,9 @@ from imgc.logging_config import configure_logging
 logging.basicConfig(level=logging.INFO, format='[imgc] %(message)s')
 logger = logging.getLogger(__name__)
 
+# Environment variable parsing constants
+ENV_TRUE_VALUES = {'true', '1', 'yes', 'on'}
+
 
 def _env_str(name, default=None):
     """Get string environment variable."""
@@ -34,8 +37,13 @@ def _env_float(name, default=None):
     return float(v) if v is not None and v != '' else default
 
 def _env_bool(name, default=False):
-    """Get boolean environment variable with multiple accepted formats."""
-    return _env_str(name, 'false' if not default else 'true').lower() in ('true', '1', 'yes', 'on')
+    """Get boolean environment variable with multiple accepted formats.
+    
+    Accepted true values: 'true', '1', 'yes', 'on' (case-insensitive)
+    All other values are considered false.
+    """
+    value = _env_str(name, 'false' if not default else 'true').lower()
+    return value in ENV_TRUE_VALUES
 
 
 def main():

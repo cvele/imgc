@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING**: Default behavior changed from processing existing images to watch-only mode
 - Improved code quality by removing unnecessary `globals()` usage
+- Extracted environment variable parsing logic into testable functions
+- Made boolean parsing more maintainable with explicit constants
 
 ### Fixed
 - Windows path handling for paths ending with backslashes

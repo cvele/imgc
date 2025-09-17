@@ -191,20 +191,21 @@ def process_image(path: Path, compressor: Compressor) -> Optional[Dict[str, int]
 
 ### 2. Configuration Loading
 ```python
-def load_config_value(env_name: str, default_value, value_type=str):
-    """Load configuration from environment with type conversion."""
-    env_value = os.environ.get(env_name)
-    if env_value is None:
-        return default_value
+# Good - Extract constants for maintainability
+ENV_TRUE_VALUES = {'true', '1', 'yes', 'on'}
+
+def _env_bool(name, default=False):
+    """Get boolean environment variable with multiple accepted formats.
     
-    try:
-        if value_type == bool:
-            return env_value.lower() in ('true', '1', 'yes', 'on')
-        return value_type(env_value)
-    except (ValueError, TypeError):
-        logger.warning('Invalid %s value: %s, using default: %s', 
-                      env_name, env_value, default_value)
-        return default_value
+    Accepted true values: 'true', '1', 'yes', 'on' (case-insensitive)
+    All other values are considered false.
+    """
+    value = _env_str(name, 'false' if not default else 'true').lower()
+    return value in ENV_TRUE_VALUES
+
+# Avoid - Inline magic values
+def _env_bool_bad(name, default=False):
+    return _env_str(name, 'false').lower() in ('true', '1', 'yes', 'on')  # Hard to maintain
 ```
 
 ### 3. File System Watching

@@ -256,29 +256,15 @@ def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
 def test_environment_variable_parsing_functions():
     """Test the actual environment variable parsing functions from main.py."""
     import os
-    from main import _env_bool, _env_str, _env_int, _env_float
+    from main import _env_bool, _env_str, _env_int, _env_float, ENV_TRUE_VALUES
     
     # Test boolean parsing with various values
-    bool_test_cases = [
-        ('true', True),
-        ('True', True),
-        ('TRUE', True),
-        ('1', True),
-        ('yes', True),
-        ('YES', True),
-        ('on', True),
-        ('ON', True),
-        ('false', False),
-        ('False', False),
-        ('FALSE', False),
-        ('0', False),
-        ('no', False),
-        ('NO', False),
-        ('off', False),
-        ('OFF', False),
-        ('', False),
-        ('random', False),
-    ]
+    # Generate test cases from the actual constant plus some false cases
+    true_cases = [(val, True) for val in ENV_TRUE_VALUES] + [(val.upper(), True) for val in ENV_TRUE_VALUES]
+    false_cases = [('false', False), ('False', False), ('FALSE', False), ('0', False), 
+                   ('no', False), ('NO', False), ('off', False), ('OFF', False), 
+                   ('', False), ('random', False), ('invalid', False)]
+    bool_test_cases = true_cases + false_cases
     
     for env_value, expected_bool in bool_test_cases:
         # Set environment variable
