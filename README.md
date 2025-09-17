@@ -24,8 +24,6 @@
 
 Download the latest release for your platform from [Releases](https://github.com/cvele/imgc/releases):
 
-> **Note**: Replace `cvele` with the actual GitHub username/organization
-
 - **Linux**: `imgc-linux-x64` or `imgc-linux-arm64`
 - **Windows**: `imgc-windows-x64.exe` or `imgc-windows-arm64.exe`
 - **macOS**: `imgc-macos-x64` or `imgc-macos-arm64`
