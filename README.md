@@ -29,6 +29,8 @@ Download the latest release for your platform from [Releases](https://github.com
 - **Windows**: `imgc-windows-x64.exe` or `imgc-windows-arm64.exe`
 - **macOS**: `imgc-macos-x64` or `imgc-macos-arm64`
 
+> **Note**: ARM64 binaries are currently x64 binaries with ARM64 naming due to GitHub Actions limitations. They will work on ARM64 systems through emulation.
+
 ### Basic Usage
 
 ```bash
