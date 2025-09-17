@@ -43,7 +43,7 @@ def _env_bool(name, default=False):
     All other values are considered false.
     """
     value = _env_str(name, default)
-    if value is default:
+    if value == default:
         return default
     return str(value).lower() in ENV_TRUE_VALUES
 
