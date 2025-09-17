@@ -1,6 +1,7 @@
 # imgc - Intelligent Image Compression Watcher
 
 [![Build Status](https://github.com/cvele/imgc/actions/workflows/test-build.yml/badge.svg)](https://github.com/cvele/imgc/actions)
+[![Coverage](https://codecov.io/gh/cvele/imgc/branch/main/graph/badge.svg)](https://codecov.io/gh/cvele/imgc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
@@ -123,6 +124,7 @@ make install    # Creates venv and installs all dependencies
 
 # Run tests
 make test       # Runs pytest in the venv
+make coverage   # Runs tests with coverage report
 
 # Build binary
 make build      # Creates standalone executable
@@ -137,6 +139,7 @@ make format     # Formats code with black
 make help                              # Show all targets
 make run ARGS="--root /path"           # Run with arguments
 make test                              # Run test suite
+make coverage                          # Run tests with coverage report
 make build                             # Build standalone binary
 make release VERSION=v1.0.0           # Create release
 make clean                             # Clean build artifacts

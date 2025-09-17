@@ -4,3 +4,4 @@ Pillow>=10.0.0
 # imageio
 # pngquant can be installed separately on Windows and is invoked as an external binary
 pytest>=7.0
+coverage>=7.0
