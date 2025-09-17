@@ -1,0 +1,167 @@
+# Cursor Rules for imgc Project
+
+## Project Overview
+This is imgc (Intelligent Image Compression Watcher) - a cross-platform file system watcher that automatically compresses images when they're created or modified.
+
+## Core Technologies
+- Python 3.8+ (main language)
+- Pillow (PIL) for image processing
+- watchdog for file system monitoring
+- PyInstaller for standalone binaries
+- pytest for testing
+- GitHub Actions for CI/CD
+
+## Architecture
+- main.py: CLI entry point with argument parsing
+- imgc/watcher.py: Core file watching and event handling
+- imgc/compressor.py: Image compression algorithms
+- imgc/config.py: Centralized configuration
+- imgc/cli.py: Alternative CLI interface
+- imgc/logging_config.py: Logging setup
+
+## Code Style Guidelines
+
+### Python Code Standards
+- Use type hints for all function parameters and return values
+- Use pathlib.Path for all file operations (cross-platform compatibility)
+- Use proper logging instead of print statements
+- Handle exceptions gracefully with meaningful error messages
+- Use daemon threads for background processing
+- Implement timeouts for potentially long operations
+
+### Naming Conventions
+- Functions: snake_case
+- Classes: PascalCase
+- Constants: UPPER_SNAKE_CASE
+- Environment variables: IMGC_<OPTION_NAME>
+- File extensions: lowercase with dot (.jpg, .png, .webp, .avif)
+
+### Error Handling
+- Always log errors with context
+- Use argparse.error() for CLI validation errors
+- Implement graceful degradation where possible
+- Provide helpful error messages to users
+
+### Cross-Platform Considerations
+- Use pathlib.Path for all path operations
+- Handle Windows path separators correctly
+- Consider SIGTERM availability (Windows doesn't support it)
+- Use appropriate virtual environment paths (.venv/bin vs .venv/Scripts)
+
+## Testing Requirements
+- All new features must have comprehensive tests
+- Test both success and failure scenarios
+- Use pytest fixtures: tmp_path, monkeypatch, caplog
+- Test the actual implementation, not reimplemented logic
+- Extract testable functions when possible
+- Use descriptive test names that explain the scenario
+
+## Build and Release
+- Makefile is the primary interface for all operations
+- Use make install for dependency management
+- Use make test for running tests
+- Use make build for PyInstaller builds
+- Use make release VERSION=vX.Y.Z for releases
+- Follow semantic versioning (vX.Y.Z)
+
+## Configuration Management
+- Centralize defaults in imgc/config.py
+- Support environment variables with IMGC_ prefix
+- Use extracted parsing functions (_env_str, _env_int, _env_float, _env_bool)
+- Document all configuration options in README.md
+
+## Performance Guidelines
+- Use threading for I/O-bound operations
+- Implement file stability checking before processing
+- Use cooldown periods to prevent repeated processing
+- Monitor resource usage in multi-threaded scenarios
+- Optimize for common use cases (watch-only mode)
+
+## Security Considerations
+- Validate and normalize all user-provided paths
+- Check file permissions before processing
+- Implement resource limits and timeouts
+- Sanitize all user inputs
+
+## Documentation Standards
+- Update README.md for user-facing changes
+- Update CHANGELOG.md following Keep a Changelog format
+- Add docstrings to all public functions
+- Include type information in docstrings
+- Document breaking changes prominently
+
+## Common Patterns
+
+### Environment Variable Parsing
+```python
+ENV_TRUE_VALUES = {'true', '1', 'yes', 'on'}
+
+def _env_bool(name, default=False):
+    value = _env_str(name, 'false' if not default else 'true').lower()
+    return value in ENV_TRUE_VALUES
+```
+
+### Error Handling
+```python
+try:
+    result = risky_operation()
+except SpecificException as e:
+    logger.warning('Operation failed for %s: %s', context, e)
+    return None
+```
+
+### Threading
+```python
+stop_event = threading.Event()
+bg = threading.Thread(target=worker_function, args=(data,), daemon=True)
+bg.start()
+```
+
+### Path Handling
+```python
+path = Path(user_input).resolve()
+if not path.exists():
+    raise ValueError(f'Path does not exist: {path}')
+```
+
+## Anti-Patterns to Avoid
+- Using os.path instead of pathlib.Path
+- Silent failures without logging
+- Global state or mutable globals
+- Hardcoded paths or magic numbers
+- Platform-specific assumptions
+- Reimplementing logic in tests
+- Using print() instead of logging
+- Blocking operations without timeouts
+
+## File Organization
+- Keep modules focused and single-purpose
+- Use clear, descriptive file names
+- Group related functionality together
+- Separate concerns (CLI, core logic, configuration)
+- Keep test files parallel to source structure
+
+## Release Process
+- Update CHANGELOG.md with all changes
+- Test on multiple platforms before release
+- Use make release VERSION=vX.Y.Z
+- Verify GitHub Actions build all platforms
+- Include migration guides for breaking changes
+
+## When Adding Dependencies
+- Add to requirements.txt with version constraints
+- Update PyInstaller hidden imports in Makefile if needed
+- Test cross-platform compatibility
+- Document any platform-specific requirements
+
+## Debugging Guidelines
+- Use appropriate log levels (debug, info, warning)
+- Include context in log messages (file paths, operation details)
+- Use structured logging for important events
+- Implement verbose modes for troubleshooting
+
+## IDE and Tool Configuration
+- Use .venv for virtual environments
+- Run tests with make test
+- Use make format for code formatting
+- Follow existing code style and patterns
