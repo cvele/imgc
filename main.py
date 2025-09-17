@@ -42,7 +42,8 @@ def _env_bool(name, default=False):
     Accepted true values: 'true', '1', 'yes', 'on' (case-insensitive)
     All other values are considered false.
     """
-    value = _env_str(name, 'false' if not default else 'true').lower()
+    default_str = 'true' if default else 'false'
+    value = _env_str(name, default_str).lower()
     return value in ENV_TRUE_VALUES
 
 
