@@ -22,14 +22,18 @@ endif
 
 	# Common hidden imports for PyInstaller builds (tweak as needed)
 	PYI_HIDDEN_IMPORTS_COMMON := \
+		PIL \
+		PIL.Image \
+		PIL.ImageFile \
+		PIL.ImageFilter \
+		PIL.ImageFont \
+		PIL.ImageDraw \
+		PIL.ImageEnhance \
+		PIL.ImageOps \
 		PIL._tkinter_finder \
 		PIL._imaging \
 		PIL.ImageQt \
-		PIL.ImageFile \
-		PIL._imagingft \
-		imageio.plugins.freeimage \
-		imageio.plugins.ffmpeg \
-		imageio
+		PIL._imagingft
 	
 	# Platform-specific hidden imports
 	ifeq ($(OS),Windows_NT)
@@ -107,6 +111,8 @@ build: venv
 	$(PY) -m pip install --upgrade pyinstaller
 	$(PY) -m PyInstaller --onefile --name $(BUILD_NAME) \
 		--add-data "imgc$(DATASEP)imgc" \
+		--collect-submodules PIL \
+		--collect-data PIL \
 		$(foreach imp,$(PYI_HIDDEN_IMPORTS),--hidden-import $(imp)) \
 		main.py
 

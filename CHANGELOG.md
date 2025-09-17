@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Test compatibility issues with threading and event handling
 - Cross-platform build compatibility
+- PyInstaller PIL/Pillow dependency inclusion for binary builds
 
 ## [Initial] - Development Version
 
