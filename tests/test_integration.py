@@ -187,20 +187,20 @@ class TestImageCompression:
         
         # Test with JPEG image
         jpeg_path = images['medium_jpeg']['path']
-        original_image = Image.open(jpeg_path)
-        original_size = original_image.size
-        original_mode = original_image.mode
         
+        # Get original properties without keeping file open
+        with Image.open(jpeg_path) as original_image:
+            original_size = original_image.size
+            original_mode = original_image.mode
+        
+        # Compress the image
         stats = compressor.compress(jpeg_path)
         assert stats is not None
         
         # Verify image properties are preserved
-        compressed_image = Image.open(jpeg_path)
-        assert compressed_image.size == original_size
-        assert compressed_image.mode == original_mode
-        
-        original_image.close()
-        compressed_image.close()
+        with Image.open(jpeg_path) as compressed_image:
+            assert compressed_image.size == original_size
+            assert compressed_image.mode == original_mode
     
     def test_compression_with_different_qualities(self, test_images_dir):
         """Test compression with different quality settings."""
