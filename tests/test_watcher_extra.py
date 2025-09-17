@@ -72,51 +72,36 @@ def test_start_watch_mirrors_lifecycle(monkeypatch, tmp_path, caplog):
     # Replace Observer used inside module with factory that records instances
     monkeypatch.setattr(watcher_mod, 'Observer', DummyObserver)
 
-    # Replace signal.signal inside watcher module with a function that
-    # captures the handler so the test can invoke it to trigger shutdown
-    registered = {}
-
+    # Replace signal.signal inside watcher module with a no-op
     def fake_signal(sig, handler):
-        registered['handler'] = handler
+        pass
 
     monkeypatch.setattr(watcher_mod.signal, 'signal', fake_signal)
 
-    # Provide controllable Event and Thread used inside watcher module
-    ev = threading.Event()
-
-    class DummyThread:
-        def __init__(self, *a, **k):
-            self._started = False
-        def start(self):
-            # don't actually start a thread; simulate started
-            self._started = True
-        def join(self, timeout=None):
-            return
-
-    # Patch threading.Event and Thread inside the watcher module
-    monkeypatch.setattr(watcher_mod.threading, 'Event', lambda: ev)
-    monkeypatch.setattr(watcher_mod.threading, 'Thread', DummyThread)
+    # We don't need to patch Thread - we'll let the background thread run normally
 
     # Use a no-op compressor
     class NoopComp:
         def compress(self, p):
             return {'new': 1}
 
+    # Create our own stop event that we can control
+    stop_event = threading.Event()
+
     # Run start_watch in a thread so we can set the event. Use a finished
-    # flag written by the runner to avoid checking Thread.is_alive(), which
-    # can be fragile when threading.Thread is monkeypatched inside the
-    # watcher module.
+    # flag written by the runner to avoid checking Thread.is_alive().
     finished = {'done': False}
 
     def runner():
         try:
-            start_watch(tmp_path, NoopComp(), workers=1, file_timeout=0.0, stable_seconds=0.0, new_delay=0.0, compress_timeout=0)
+            start_watch(tmp_path, NoopComp(), workers=1, file_timeout=0.0, stable_seconds=0.0, new_delay=0.0, compress_timeout=0, stop_event=stop_event)
         finally:
             finished['done'] = True
 
     t = threading.Thread(target=runner, daemon=True)
     caplog.clear()
     t.start()
+    
     # Wait until the DummyObserver has been created and scheduled by
     # start_watch. Poll to avoid races with the watcher startup.
     deadline = time.time() + 1.0
@@ -125,25 +110,15 @@ def test_start_watch_mirrors_lifecycle(monkeypatch, tmp_path, caplog):
             break
         time.sleep(0.01)
 
-    # Locate the handler that start_watch scheduled on our DummyObserver and
-    # set its stop_event directly to request shutdown. This avoids any
-    # interaction with global signals or threading internals.
-    if observers and getattr(observers[0], 'scheduled', None):
-        handler_obj = observers[0].scheduled[0]
-        # Try to set both the handler's stop_event (if present) and the
-        # test-local ev to be robust against mismatched Event instances
-        if getattr(handler_obj, 'stop_event', None):
-            try:
-                handler_obj.stop_event.set()
-            except Exception:
-                pass
-        # always set the local ev as a fallback
-        ev.set()
-    else:
-        ev.set()
-    # Wait up to 2s for the runner to mark finished; poll to avoid
-    # relying on Thread.join which may be affected by monkeypatching.
+    # Give a short time for start_watch to get to the wait loop
+    time.sleep(0.1)
+    
+    # Now set the event to signal shutdown
+    stop_event.set()
+    
+    # Wait up to 3s for the runner to mark finished
     deadline = time.time() + 3
     while time.time() < deadline and not finished['done']:
         time.sleep(0.05)
+    
     assert finished['done'] is True

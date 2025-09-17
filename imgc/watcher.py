@@ -176,17 +176,21 @@ def process_existing(root: Path, handler: ImageHandler):
             _process(p)
 
 
-def start_watch(root: Path, compressor: Compressor, workers: int = 1, file_timeout: float = 0.0, stable_seconds: float = 2.0, new_delay: float = 0.0, compress_timeout: float = 30.0):
+def start_watch(root: Path, compressor: Compressor, workers: int = 1, file_timeout: float = 0.0, stable_seconds: float = 2.0, new_delay: float = 0.0, compress_timeout: float = 30.0, stop_event: Optional[threading.Event] = None):
     """Start watching `root`. This function is responsive to SIGINT/SIGTERM.
 
     It starts the observer immediately and runs the initial pass in a background
     thread so the main thread can respond to signals and shut down quickly.
+    
+    Args:
+        stop_event: Optional event to signal shutdown. If None, creates a new one.
     """
     handler = ImageHandler(compressor, stable_seconds=stable_seconds, new_delay=new_delay, compress_timeout=compress_timeout)
     handler.workers = workers
     handler.file_timeout = file_timeout
 
-    stop_event = threading.Event()
+    if stop_event is None:
+        stop_event = threading.Event()
     handler.stop_event = stop_event
 
     # Start the observer first so new files won't be missed while we process existing.

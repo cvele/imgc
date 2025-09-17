@@ -21,17 +21,26 @@ endif
 	endif
 
 	# Common hidden imports for PyInstaller builds (tweak as needed)
-	PYI_HIDDEN_IMPORTS := \
+	PYI_HIDDEN_IMPORTS_COMMON := \
 		PIL._tkinter_finder \
 		PIL._imaging \
 		PIL.ImageQt \
 		PIL.ImageFile \
 		PIL._imagingft \
-		watchdog.observers.inotify_buffer \
-		watchdog.observers.winapi \
 		imageio.plugins.freeimage \
 		imageio.plugins.ffmpeg \
 		imageio
+	
+	# Platform-specific hidden imports
+	ifeq ($(OS),Windows_NT)
+		PYI_HIDDEN_IMPORTS_PLATFORM := \
+			watchdog.observers.winapi
+	else
+		PYI_HIDDEN_IMPORTS_PLATFORM := \
+			watchdog.observers.inotify_buffer
+	endif
+	
+	PYI_HIDDEN_IMPORTS := $(PYI_HIDDEN_IMPORTS_COMMON) $(PYI_HIDDEN_IMPORTS_PLATFORM)
 
 .PHONY: help venv install run test lint format clean
 
