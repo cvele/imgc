@@ -51,7 +51,7 @@ jobs:
           fetch-depth: 0  # Fetch full history for changelog generation
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           architecture: ${{ matrix.cross_compile && 'x64' || matrix.arch }}
