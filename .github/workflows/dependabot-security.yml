@@ -1,0 +1,113 @@
+# Enhanced security workflow for Dependabot PRs
+# This workflow adds additional security checks for dependency updates
+
+name: Dependabot Security Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  security-check:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run safety check for known vulnerabilities
+        run: |
+          safety check --json --output safety-report.json || true
+          if [ -f safety-report.json ]; then
+            echo "## Safety Vulnerability Report" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat safety-report.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Run bandit security linter
+        run: |
+          bandit -r imgc/ -f json -o bandit-report.json || true
+          if [ -f bandit-report.json ]; then
+            echo "## Bandit Security Report" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat bandit-report.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check for high-risk changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const riskFiles = files.filter(file => 
+              file.filename.includes('requirements.txt') ||
+              file.filename.includes('setup.py') ||
+              file.filename.includes('.yml') ||
+              file.filename.includes('.yaml')
+            );
+            
+            if (riskFiles.length > 0) {
+              const fileList = riskFiles.map(f => `- ${f.filename}`).join('\n');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🔍 **Security Review Required**
+                
+                This Dependabot PR modifies security-sensitive files:
+                
+                ${fileList}
+                
+                **Automated security checks have been run:**
+                - ✅ Safety vulnerability scan
+                - ✅ Bandit security linting
+                - ✅ File change analysis
+                
+                Please review the security reports in the workflow summary before merging.`
+              });
+            }
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            safety-report.json
+            bandit-report.json
+          retention-days: 30
+
+# This workflow provides:
+# 1. Vulnerability scanning with Safety
+# 2. Security linting with Bandit  
+# 3. Analysis of changed files
+# 4. Automated comments for high-risk changes
+# 5. Report artifacts for manual review
+#
+# It complements the auto-merge workflow by adding
+# an extra layer of security validation.
