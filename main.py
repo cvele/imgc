@@ -42,10 +42,10 @@ def _env_bool(name, default=False):
     Accepted true values: 'true', '1', 'yes', 'on' (case-insensitive)
     All other values are considered false.
     """
-    value = _env_str(name, None)
-    if value is None:
+    value = _env_str(name, default)
+    if value is default:
         return default
-    return value.lower() in ENV_TRUE_VALUES
+    return str(value).lower() in ENV_TRUE_VALUES
 
 
 def main():
