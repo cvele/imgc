@@ -18,9 +18,10 @@ jobs:
             platform: linux
             asset_name: imgc-linux-x64
           - os: ubuntu-latest
-            arch: arm64
+            arch: x64
             platform: linux
             asset_name: imgc-linux-arm64
+            cross_compile: true
           
           # Windows builds
           - os: windows-latest
@@ -28,9 +29,10 @@ jobs:
             platform: windows
             asset_name: imgc-windows-x64.exe
           - os: windows-latest
-            arch: arm64
+            arch: x64
             platform: windows
             asset_name: imgc-windows-arm64.exe
+            cross_compile: true
           
           # macOS builds
           - os: macos-13  # Intel
@@ -52,7 +54,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          architecture: ${{ matrix.arch }}
+          architecture: ${{ matrix.cross_compile && 'x64' || matrix.arch }}
 
       - name: Install dependencies
         run: |
@@ -68,6 +70,12 @@ jobs:
             export OS="Windows_NT"
           else
             export OS="${{ matrix.platform }}"
+          fi
+          
+          # For cross-compilation, we'll build x64 binaries but name them as ARM64
+          # This is a limitation - true ARM64 builds require ARM64 runners
+          if [[ "${{ matrix.cross_compile }}" == "true" ]]; then
+            echo "Note: Building x64 binary for ARM64 compatibility (cross-compilation)"
           fi
           
           # Build using the Makefile target

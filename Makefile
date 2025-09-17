@@ -49,7 +49,7 @@ help:
 	@echo "  make venv       - create virtualenv at $(VENV)"
 	@echo "  make install    - create venv and install requirements"
 	@echo "  make install-dev - create venv and install with dev dependencies"
-	@echo "  make run        - run watcher (use CLI flags to configure)"
+	@echo "  make run ARGS='--root /path' - run watcher with arguments"
 	@echo "  make test       - run pytest"
 	@echo "  make lint       - run quick syntax checks (py_compile)"
 	@echo "  make build      - build a standalone binary using PyInstaller"
@@ -77,7 +77,7 @@ install-dev: venv
 
 run:
 	@echo "Running watcher (use --help for options)"
-	$(PY) main.py
+	$(PY) main.py $(ARGS)
 
 test: venv
 	@echo "Ensuring pytest is installed in the virtualenv"

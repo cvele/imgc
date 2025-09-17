@@ -46,7 +46,7 @@ imgc-windows-x64.exe --root C:\path\to\watch
 git clone https://github.com/cvele/imgc.git
 cd imgc
 make install
-make run -- --root /path/to/watch
+make run ARGS="--root /path/to/watch"
 ```
 
 ## Usage Examples
@@ -128,6 +128,7 @@ make format
 
 ```bash
 make help                              # Show all targets
+make run ARGS="--root /path"           # Run with arguments
 make test                              # Run test suite
 make build                             # Build standalone binary
 make release VERSION=v1.0.0           # Create release
