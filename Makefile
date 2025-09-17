@@ -98,7 +98,7 @@ test-unit: install
 test-integration: install
 	@echo "Running integration tests with real images"
 	@$(PY) -m pip install pytest
-	$(PY) -m pytest -q tests/test_integration.py -v
+	$(PY) -m pytest -q tests/test_integration.py
 
 coverage: install
 	@echo "Running tests with coverage"
@@ -173,7 +173,7 @@ check-release:
 		echo "Error: Tag $(VERSION) already exists"; \
 		exit 1; \
 	fi
-	@echo "✅ Release checks passed for $(VERSION)"
+	@echo "Release checks passed for $(VERSION)"
 
 release: check-release test
 	@echo "Creating release $(VERSION)..."
@@ -185,7 +185,7 @@ release: check-release test
 	@git tag -a "$(VERSION)" -m "Release $(VERSION)"
 	@git push origin "$(VERSION)"
 	@echo ""
-	@echo "✅ Release tag $(VERSION) created and pushed!"
+	@echo "Release tag $(VERSION) created and pushed!"
 	@echo ""
 	@echo "The GitHub Actions workflow will now:"
 	@echo "  1. Build binaries for all platforms (Windows, Linux, macOS)"
