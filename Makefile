@@ -83,7 +83,7 @@ run:
 	@echo "Running watcher (use --help for options)"
 	$(PY) main.py $(ARGS)
 
-test: venv
+test: install
 	@echo "Ensuring pytest is installed in the virtualenv"
 	@$(PY) -m pip install pytest
 	$(PY) -m pytest -q
