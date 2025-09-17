@@ -161,7 +161,6 @@ def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
     def mock_process_existing(root, handler):
         process_existing_called['count'] += 1
         # Don't actually process, just record the call
-        
     monkeypatch.setattr(watcher_mod, 'process_existing', mock_process_existing)
 
     # No-op compressor
