@@ -19,18 +19,28 @@ logging.basicConfig(level=logging.INFO, format='[imgc] %(message)s')
 logger = logging.getLogger(__name__)
 
 
+def _env_str(name, default=None):
+    """Get string environment variable."""
+    return os.environ.get(name, default)
+
+def _env_int(name, default=None):
+    """Get integer environment variable with error handling."""
+    v = os.environ.get(name)
+    return int(v) if v is not None and v != '' else default
+
+def _env_float(name, default=None):
+    """Get float environment variable with error handling."""
+    v = os.environ.get(name)
+    return float(v) if v is not None and v != '' else default
+
+def _env_bool(name, default=False):
+    """Get boolean environment variable with multiple accepted formats."""
+    return _env_str(name, 'false' if not default else 'true').lower() in ('true', '1', 'yes', 'on')
+
+
 def main():
     # Allow environment variables to provide defaults (executor-friendly).
     # Naming: IMGC_<OPTION_NAME>, e.g. IMGC_ROOT, IMGC_JPEG_QUALITY
-    env = os.environ
-    def _env_str(name, default=None):
-        return env.get(name, default)
-    def _env_int(name, default=None):
-        v = env.get(name)
-        return int(v) if v is not None and v != '' else default
-    def _env_float(name, default=None):
-        v = env.get(name)
-        return float(v) if v is not None and v != '' else default
 
     env_root = _env_str('IMGC_ROOT', None)
     env_jpeg = _env_int('IMGC_JPEG_QUALITY', config.DEFAULT_JPEG_QUALITY)
@@ -45,7 +55,7 @@ def main():
     env_compress_timeout = _env_float('IMGC_COMPRESS_TIMEOUT', config.DEFAULT_COMPRESS_TIMEOUT)
     env_log_file = _env_str('IMGC_LOG_FILE', str(Path(config.DEFAULT_LOG_DIR) / config.DEFAULT_LOG_FILENAME))
     env_log_level = _env_str('IMGC_LOG_LEVEL', config.DEFAULT_LOG_LEVEL)
-    env_process_existing = _env_str('IMGC_PROCESS_EXISTING', 'false').lower() in ('true', '1', 'yes', 'on')
+    env_process_existing = _env_bool('IMGC_PROCESS_EXISTING', config.DEFAULT_PROCESS_EXISTING)
 
     parser = argparse.ArgumentParser(description='Image auto-compress watcher (delegates to imgc package)')
     # Make --root optional at argparse level but enforce presence below so we can give a clear error

@@ -117,7 +117,20 @@ This file provides context and guidelines for GitHub Copilot to assist with code
        # Assertion
    ```
 
-3. **Mocking**: Use pytest's monkeypatch for clean mocking
+3. **Test the Actual Implementation**: Avoid reimplementing logic in tests
+   ```python
+   # Good - Test the actual function
+   from main import _env_bool
+   result = _env_bool('TEST_VAR', False)
+   assert result == expected
+   
+   # Avoid - Reimplementing the logic
+   def _env_str(name, default=None):  # Duplicates main.py logic
+       return env.get(name, default)
+   result = _env_str('TEST_VAR', 'false').lower() in ('true', '1', 'yes', 'on')
+   ```
+
+4. **Mocking**: Use pytest's monkeypatch for clean mocking
    ```python
    # Good
    monkeypatch.setattr(module, 'function', mock_function)
@@ -125,11 +138,22 @@ This file provides context and guidelines for GitHub Copilot to assist with code
    # Avoid complex manual mocking
    ```
 
-4. **Temporary Files**: Always use pytest's tmp_path fixture
+5. **Temporary Files**: Always use pytest's tmp_path fixture
    ```python
    def test_file_processing(tmp_path):
        test_file = tmp_path / 'test.jpg'
        test_file.write_bytes(b'fake_image_data')
+   ```
+
+6. **Extract Testable Functions**: Make code more testable by extracting pure functions
+   ```python
+   # Good - Extracted, testable function
+   def _env_bool(name, default=False):
+       return _env_str(name, 'false' if not default else 'true').lower() in ('true', '1', 'yes', 'on')
+   
+   # Then test it directly
+   def test_env_bool_parsing():
+       assert _env_bool('TEST', False) == expected
    ```
 
 ### Performance Considerations

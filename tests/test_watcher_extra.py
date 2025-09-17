@@ -253,13 +253,13 @@ def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
     assert finished['done'] is True
 
 
-def test_environment_variable_process_existing(monkeypatch):
-    """Test that IMGC_PROCESS_EXISTING environment variable is parsed correctly."""
+def test_environment_variable_parsing_functions():
+    """Test the actual environment variable parsing functions from main.py."""
     import os
-    from main import main
+    from main import _env_bool, _env_str, _env_int, _env_float
     
-    # Test various environment variable values
-    test_cases = [
+    # Test boolean parsing with various values
+    bool_test_cases = [
         ('true', True),
         ('True', True),
         ('TRUE', True),
@@ -280,16 +280,60 @@ def test_environment_variable_process_existing(monkeypatch):
         ('random', False),
     ]
     
-    for env_value, expected_bool in test_cases:
-        # Mock environment
-        mock_env = {'IMGC_PROCESS_EXISTING': env_value}
-        monkeypatch.setattr(os, 'environ', mock_env)
+    for env_value, expected_bool in bool_test_cases:
+        # Set environment variable
+        original_value = os.environ.get('TEST_BOOL')
+        try:
+            os.environ['TEST_BOOL'] = env_value
+            result = _env_bool('TEST_BOOL', False)
+            assert result == expected_bool, f"_env_bool with '{env_value}' should return {expected_bool}, got {result}"
+        finally:
+            # Restore original environment
+            if original_value is None:
+                os.environ.pop('TEST_BOOL', None)
+            else:
+                os.environ['TEST_BOOL'] = original_value
+    
+    # Test string parsing
+    original_value = os.environ.get('TEST_STR')
+    try:
+        os.environ['TEST_STR'] = 'test_value'
+        assert _env_str('TEST_STR', 'default') == 'test_value'
+        assert _env_str('NONEXISTENT', 'default') == 'default'
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_STR', None)
+        else:
+            os.environ['TEST_STR'] = original_value
+    
+    # Test integer parsing
+    original_value = os.environ.get('TEST_INT')
+    try:
+        os.environ['TEST_INT'] = '42'
+        assert _env_int('TEST_INT', 0) == 42
+        assert _env_int('NONEXISTENT', 10) == 10
         
-        # Import main module to test env parsing
-        import main
-        # Test the parsing logic directly
-        def _env_str(name, default=None):
-            return mock_env.get(name, default)
+        # Test empty string handling
+        os.environ['TEST_INT'] = ''
+        assert _env_int('TEST_INT', 5) == 5
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_INT', None)
+        else:
+            os.environ['TEST_INT'] = original_value
+    
+    # Test float parsing
+    original_value = os.environ.get('TEST_FLOAT')
+    try:
+        os.environ['TEST_FLOAT'] = '3.14'
+        assert _env_float('TEST_FLOAT', 0.0) == 3.14
+        assert _env_float('NONEXISTENT', 2.5) == 2.5
         
-        result = _env_str('IMGC_PROCESS_EXISTING', 'false').lower() in ('true', '1', 'yes', 'on')
-        assert result == expected_bool, f"Environment value '{env_value}' should parse to {expected_bool}, got {result}"
+        # Test empty string handling
+        os.environ['TEST_FLOAT'] = ''
+        assert _env_float('TEST_FLOAT', 1.5) == 1.5
+    finally:
+        if original_value is None:
+            os.environ.pop('TEST_FLOAT', None)
+        else:
+            os.environ['TEST_FLOAT'] = original_value
