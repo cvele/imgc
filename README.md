@@ -47,8 +47,8 @@ imgc-windows-x64.exe --root C:\path\to\watch
 ```bash
 git clone https://github.com/cvele/imgc.git
 cd imgc
-make install
-make run ARGS="--root /path/to/watch"
+make install                           # Sets up venv and installs dependencies
+make run ARGS="--root /path/to/watch"  # Run with arguments
 ```
 
 ## Usage Examples
@@ -114,16 +114,16 @@ imgc  # Uses environment variables
 # Clone and setup
 git clone https://github.com/cvele/imgc.git
 cd imgc
-make install
+make install    # Creates venv and installs all dependencies
 
 # Run tests
-make test
+make test       # Runs pytest in the venv
 
 # Build binary
-make build
+make build      # Creates standalone executable
 
 # Format code
-make format
+make format     # Formats code with black
 ```
 
 ### Available Make Targets
