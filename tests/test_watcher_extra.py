@@ -176,7 +176,7 @@ def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
     
     def runner_watch_only():
         try:
-            start_watch(tmp_path, NoopComp(), process_existing=False, stop_event=stop_event)
+            start_watch(tmp_path, NoopComp(), scan_existing=False, stop_event=stop_event)
         finally:
             finished['done'] = True
 
@@ -219,7 +219,7 @@ def test_start_watch_process_existing_flag(monkeypatch, tmp_path, caplog):
     # Test 2: With process_existing=True
     def runner_process_existing():
         try:
-            start_watch(tmp_path, NoopComp(), process_existing=True, stop_event=stop_event)
+            start_watch(tmp_path, NoopComp(), scan_existing=True, stop_event=stop_event)
         finally:
             finished['done'] = True
 

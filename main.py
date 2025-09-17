@@ -83,7 +83,7 @@ def main():
         parser.error(f'Root path is not a directory: {root_path}')
 
     compressor = Compressor(jpeg_quality=args.jpeg_quality, png_min=args.png_min, png_max=args.png_max, webp_quality=args.webp_quality, avif_quality=args.avif_quality)
-    start_watch(root_path, compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout, process_existing=args.process_existing)
+    start_watch(root_path, compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=args.compress_timeout, scan_existing=args.process_existing)
 
 
 if __name__ == '__main__':

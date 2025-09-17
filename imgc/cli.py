@@ -14,4 +14,4 @@ def run_cli(args):
     if not getattr(args, 'root', None):
         raise ValueError('Root directory not provided to run_cli; pass --root or set IMGC_ROOT environment variable')
 
-    start_watch(Path(args.root), compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=getattr(args, 'compress_timeout', None) or 0, process_existing=getattr(args, 'process_existing', False))
+    start_watch(Path(args.root), compressor, workers=args.workers, file_timeout=args.file_timeout, stable_seconds=args.stable_seconds, new_delay=args.new_delay, compress_timeout=getattr(args, 'compress_timeout', None) or 0, scan_existing=getattr(args, 'process_existing', False))

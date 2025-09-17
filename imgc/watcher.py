@@ -176,14 +176,21 @@ def process_existing(root: Path, handler: ImageHandler):
             _process(p)
 
 
-def start_watch(root: Path, compressor: Compressor, workers: int = 1, file_timeout: float = 0.0, stable_seconds: float = 2.0, new_delay: float = 0.0, compress_timeout: float = 30.0, process_existing: bool = False, stop_event: Optional[threading.Event] = None):
+def start_watch(root: Path, compressor: Compressor, workers: int = 1, file_timeout: float = 0.0, stable_seconds: float = 2.0, new_delay: float = 0.0, compress_timeout: float = 30.0, scan_existing: bool = False, stop_event: Optional[threading.Event] = None):
     """Start watching `root`. This function is responsive to SIGINT/SIGTERM.
 
     It starts the observer immediately and optionally runs an initial pass in a background
     thread so the main thread can respond to signals and shut down quickly.
     
     Args:
-        process_existing: If True, process existing images on startup. If False, watch-only mode.
+        root: Directory to watch for image files.
+        compressor: Compressor instance to use for image processing.
+        workers: Number of worker threads for batch processing existing files.
+        file_timeout: Timeout for waiting for file stability during initial pass.
+        stable_seconds: Time to wait for file stability before processing.
+        new_delay: Delay before processing newly created files.
+        compress_timeout: Per-file compression timeout in seconds.
+        scan_existing: If True, process existing images on startup. If False, watch-only mode.
         stop_event: Optional event to signal shutdown. If None, creates a new one.
     """
     handler = ImageHandler(compressor, stable_seconds=stable_seconds, new_delay=new_delay, compress_timeout=compress_timeout)
@@ -202,10 +209,9 @@ def start_watch(root: Path, compressor: Compressor, workers: int = 1, file_timeo
     # Run initial processing in background so main thread can handle signals promptly.
     # process_existing will consult handler.stop_event to abort early; run it in a background thread.
     bg = None
-    if process_existing:
+    if scan_existing:
         logger.info('Processing existing images enabled - scanning %s', root)
-        # Use globals() to reference the function by name to avoid name conflict
-        bg = threading.Thread(target=globals()['process_existing'], args=(root, handler), daemon=True)
+        bg = threading.Thread(target=process_existing, args=(root, handler), daemon=True)
         bg.start()
     else:
         logger.info('Watch-only mode - existing images will be skipped')

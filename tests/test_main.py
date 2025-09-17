@@ -28,7 +28,7 @@ def test_process_existing_argument_parsing(monkeypatch, tmp_path):
     main()
     
     assert len(start_watch_calls) == 1
-    assert start_watch_calls[0]['process_existing'] is True
+    assert start_watch_calls[0]['scan_existing'] is True
 
 
 def test_process_existing_default_false(monkeypatch, tmp_path):
@@ -50,7 +50,7 @@ def test_process_existing_default_false(monkeypatch, tmp_path):
     main()
     
     assert len(start_watch_calls) == 1
-    assert start_watch_calls[0]['process_existing'] is False
+    assert start_watch_calls[0]['scan_existing'] is False
 
 
 def test_environment_variable_process_existing_integration(monkeypatch, tmp_path):
@@ -73,7 +73,7 @@ def test_environment_variable_process_existing_integration(monkeypatch, tmp_path
     main()
     
     assert len(start_watch_calls) == 1
-    assert start_watch_calls[0]['process_existing'] is True
+    assert start_watch_calls[0]['scan_existing'] is True
 
 
 def test_command_line_overrides_environment(monkeypatch, tmp_path):
@@ -96,7 +96,7 @@ def test_command_line_overrides_environment(monkeypatch, tmp_path):
     main()
     
     assert len(start_watch_calls) == 1
-    assert start_watch_calls[0]['process_existing'] is True
+    assert start_watch_calls[0]['scan_existing'] is True
 
 
 def test_path_validation_nonexistent_directory(monkeypatch, capsys):

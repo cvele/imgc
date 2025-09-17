@@ -11,10 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--process-existing` flag to enable processing of existing images on startup
 - `IMGC_PROCESS_EXISTING` environment variable support
 - Watch-only mode as the new default behavior (existing images are skipped)
+- Better path validation with helpful error messages
+
+### Changed
+- **BREAKING**: Default behavior changed from processing existing images to watch-only mode
+- Improved code quality by removing unnecessary `globals()` usage
 
 ### Fixed
 - Windows path handling for paths ending with backslashes
-- Added path validation with helpful error messages
+- PyInstaller PIL/Pillow dependency inclusion for binary builds
 
 ## [v0.0.1]
 
