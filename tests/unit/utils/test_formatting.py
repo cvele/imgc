@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Import the function from where it now lives
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from imgc.plugins.builtin.image_processor import human_readable_size
 
 
