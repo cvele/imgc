@@ -51,14 +51,14 @@ endif
 help:
 	@echo "Makefile targets for this project"
 	@echo "  make venv       - create virtualenv at $(VENV)"
-	@echo "  make install    - create venv and install requirements"
-	@echo "  make install-dev - create venv and install with dev dependencies"
+	@echo "  make install    - create venv and install runtime requirements"
+	@echo "  make install-dev - create venv and install with test/dev dependencies"
 	@echo "  make run ARGS='--root /path' - run watcher with arguments"
-	@echo "  make test       - run all tests"
-	@echo "  make test-unit  - run unit tests only (excludes integration)"
-	@echo "  make test-integration - run integration tests with real images"
+	@echo "  make test       - run all tests (unit + integration)"
+	@echo "  make test-unit  - run unit tests only (fast, isolated tests)"
+	@echo "  make test-integration - run integration tests (slower, end-to-end tests)"
 	@echo "  make coverage   - run tests with coverage report"
-	@echo "  make lint       - run quick syntax checks (py_compile)"
+	@echo "  make lint       - run code quality checks (formatting, syntax)"
 	@echo "  make build      - build a standalone binary using PyInstaller"
 	@echo "  make package    - create a zip of the built binary (dist)"
 	@echo "  make format     - run black formatter"
@@ -73,53 +73,52 @@ venv:
 	@echo "To activate (POSIX): . $(VENV)/bin/activate"
 
 install: venv
-	@echo "Installing requirements into $(VENV)"
+	@echo "Installing runtime requirements into $(VENV)"
 	$(PY) -m pip install --upgrade pip setuptools wheel
 	$(PY) -m pip install -r requirements.txt
 
 install-dev: venv
-	@echo "Installing development requirements into $(VENV)"
+	@echo "Installing development and test requirements into $(VENV)"
 	$(PY) -m pip install --upgrade pip setuptools wheel
-	$(PY) -m pip install -e ".[dev]"
+	$(PY) -m pip install -r requirements-test.txt
 
-run:
+run: install
 	@echo "Running watcher (use --help for options)"
 	$(PY) main.py $(ARGS)
 
-test: install
-	@echo "Ensuring pytest is installed in the virtualenv"
-	@$(PY) -m pip install pytest
+test: install-dev
+	@echo "Running all tests"
 	$(PY) -m pytest -v
 
-test-unit: install
-	@echo "Running unit tests only"
-	@$(PY) -m pip install pytest
-	$(PY) -m pytest -q --ignore=tests/test_integration.py
+test-unit: install-dev
+	@echo "Running unit tests only (fast, isolated tests)"
+	$(PY) -m pytest -q tests/unit/
 
-test-integration: install
-	@echo "Running integration tests with real images"
-	@$(PY) -m pip install pytest
-	$(PY) -m pytest -q tests/test_integration.py
+test-integration: install-dev
+	@echo "Running integration tests (slower, end-to-end tests)"
+	$(PY) -m pytest -q tests/integration/
 
-coverage: install
+coverage: install-dev
 	@echo "Running tests with coverage"
-	@$(PY) -m pip install coverage pytest
-	@$(PY) -m coverage run -m pytest
-	@$(PY) -m coverage report -m
-	@$(PY) -m coverage xml -o coverage.xml
-	@$(PY) -m coverage html -d coverage_html
+	$(PY) -m coverage run -m pytest
+	$(PY) -m coverage report -m
+	$(PY) -m coverage xml -o coverage.xml
+	$(PY) -m coverage html -d coverage_html
 
-lint:
-	@echo "Running quick syntax checks"
+lint: install-dev
+	@echo "Running code quality checks"
+	@echo "  - Checking code formatting with black..."
+	$(PY) -m black --check --diff .
+	@echo "  - Running syntax checks..."
 	$(PY) -m py_compile main.py imgc/*.py || true
+	@echo "  - Checking for common issues..."
+	@echo "Lint checks complete"
 
-format:
+format: install-dev
 	@echo "Formatting with black (will install if missing)"
-	$(PY) -m pip install black
 	$(PY) -m black .
 
-
-build: venv
+build: install
 	@echo "Building standalone binary with PyInstaller"
 	$(PY) -m pip install --upgrade pyinstaller
 	$(PY) -m PyInstaller --onefile --name $(BUILD_NAME) \
