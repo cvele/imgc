@@ -122,6 +122,7 @@ def add_plugin_arguments_to_parser(
             plugin_group.add_argument(arg_name, **arg_kwargs)
             logger.debug(f"Added plugin argument: {arg_name}")
 
+
 def create_plugin_manager_for_args(
     plugin_dirs: Optional[List[Path]] = None,
 ) -> PluginManager:
