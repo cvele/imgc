@@ -334,4 +334,4 @@ class ImageProcessor(FileProcessor):
             return False
 
         # Additional validation for image files
-        return self.validate_file(file_path) and file_path.stat().st_size > 0
+        return self.validate_file(file_path)
