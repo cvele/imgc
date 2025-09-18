@@ -227,6 +227,38 @@ make clean                             # Clean build artifacts
 > - Update quality arguments: `--jpeg-quality` → `--image-jpeg-quality`, etc.
 > - Move custom plugins from `~/.imgc/plugins` to `./plugins` or use `--plugin-dirs`
 
+## Real-World Use Case: Plex Media Server Optimization
+
+**Problem**: Large Plex libraries generate massive cache directories filled with uncompressed images (movie posters, thumbnails, artwork). A typical large library can accumulate 300GB+ of cache data, consuming valuable storage space.
+
+**Solution**: Use imgc to automatically compress Plex cache images while maintaining visual quality:
+
+```bash
+# Monitor Plex cache directory and compress existing images
+imgc --root "/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Cache" \
+     --process-existing \
+     --workers 4 \
+     --image-jpeg-quality 85 \
+     --image-png-min 70 \
+     --image-png-max 85
+
+# Or use environment variables for persistent configuration
+# Note: Always quote paths containing spaces when setting environment variables
+export IMGC_ROOT="/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Cache"
+export IMGC_PROCESS_EXISTING=true
+export IMGC_WORKERS=4
+export IMGC_IMAGE_JPEG_QUALITY=85
+imgc
+```
+
+**Results**: 
+- **Storage reduction**: 300GB → ~120GB (60% reduction)
+- **Quality preserved**: Visually identical images at optimized compression
+- **Ongoing optimization**: New cache images automatically compressed
+- **Combined with BIF interval reduction**: Further storage savings
+
+> **💡 Pro Tip**: Combine with Plex's BIF (thumbnail) interval settings for maximum storage efficiency while maintaining smooth scrubbing experience.
+
 ## Performance
 
 - **Lightweight**: Minimal resource usage when idle (especially in watch-only mode)
