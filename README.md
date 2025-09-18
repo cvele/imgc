@@ -243,6 +243,7 @@ imgc --root "/var/lib/plexmediaserver/Library/Application Support/Plex Media Ser
      --image-png-max 85
 
 # Or use environment variables for persistent configuration
+# Note: Always quote paths containing spaces when setting environment variables
 export IMGC_ROOT="/var/lib/plexmediaserver/Library/Application Support/Plex Media Server/Cache"
 export IMGC_PROCESS_EXISTING=true
 export IMGC_WORKERS=4
