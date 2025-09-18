@@ -395,7 +395,7 @@ class TestHumanReadableSize:
     def test_megabytes(self):
         """Test formatting megabytes."""
         assert human_readable_size(1024 * 1024) == "1.0MB"
-        assert human_readable_size(1024 * 1024 * 2.5) == "2.5MB"
+        assert human_readable_size(int(1024 * 1024 * 2.5)) == "2.5MB"
 
     def test_gigabytes(self):
         """Test formatting gigabytes."""
