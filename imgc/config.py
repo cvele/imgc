@@ -2,6 +2,7 @@
 
 Modify these values to change runtime defaults for the watcher and compressor.
 """
+
 from pathlib import Path
 
 # Compression quality defaults
@@ -21,11 +22,11 @@ DEFAULT_COMPRESS_TIMEOUT = 30.0  # per-file compress timeout; 0 = disabled
 # Logging defaults
 # Default log directory: place logs next to the package (project root) under ./logs
 # Use the package file location to compute project root reliably when installed or run from source.
-DEFAULT_LOG_DIR = str(Path(__file__).resolve().parents[1] / 'logs')
+DEFAULT_LOG_DIR = str(Path(__file__).resolve().parents[1] / "logs")
 # Default log filename (rotated by date/size as needed)
-DEFAULT_LOG_FILENAME = 'imgc.log'
+DEFAULT_LOG_FILENAME = "imgc.log"
 # Default log level: one of 'debug', 'info', 'warning', 'quiet'
-DEFAULT_LOG_LEVEL = 'info'
+DEFAULT_LOG_LEVEL = "info"
 
 # Processing behavior
 DEFAULT_PROCESS_EXISTING = False  # Whether to process existing files on startup

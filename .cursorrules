@@ -1,23 +1,27 @@
 # Cursor Rules for imgc Project
 
 ## Project Overview
-This is imgc (Intelligent Image Compression Watcher) - a cross-platform file system watcher that automatically compresses images when they're created or modified.
+This is imgc (Universal File Processor) - a cross-platform file system watcher with an extensible plugin system. While it excels at automatic image compression, its plugin architecture allows processing any file type with custom logic.
 
 ## Core Technologies
 - Python 3.8+ (main language)
-- Pillow (PIL) for image processing
+- Plugin system with extensible FileProcessor base class
+- Pillow (PIL) for image processing (built-in plugin)
 - watchdog for file system monitoring
 - PyInstaller for standalone binaries
 - pytest for testing
 - GitHub Actions for CI/CD
 
 ## Architecture
-- main.py: CLI entry point with argument parsing
-- imgc/watcher.py: Core file watching and event handling
-- imgc/compressor.py: Image compression algorithms
-- imgc/config.py: Centralized configuration
-- imgc/cli.py: Alternative CLI interface
+- main.py: CLI entry point with plugin-aware argument parsing
+- imgc/plugin_api.py: Plugin base classes and argument system
+- imgc/plugin_manager.py: Plugin discovery, loading, and validation
+- imgc/plugin_watcher.py: File watching with plugin integration
+- imgc/processor_chain.py: Plugin execution chain with timeout handling
+- imgc/plugins/builtin/: Built-in processors (image compression, etc.)
+- imgc/config.py: Centralized configuration defaults
 - imgc/logging_config.py: Logging setup
+- examples/plugins/: Example plugins for development reference
 
 ## Code Style Guidelines
 
@@ -33,7 +37,9 @@ This is imgc (Intelligent Image Compression Watcher) - a cross-platform file sys
 - Functions: snake_case
 - Classes: PascalCase
 - Constants: UPPER_SNAKE_CASE
-- Environment variables: IMGC_<OPTION_NAME>
+- Environment variables: IMGC_<OPTION_NAME> (core) or IMGC_<PLUGIN>_<OPTION> (plugins)
+- Plugin namespaces: lowercase with hyphens (e.g., "image", "video-processor")
+- CLI arguments: --<namespace>-<option> (e.g., --image-jpeg-quality)
 - File extensions: lowercase with dot (.jpg, .png, .webp, .avif)
 
 ### Error Handling
@@ -66,8 +72,9 @@ This is imgc (Intelligent Image Compression Watcher) - a cross-platform file sys
 
 ## Configuration Management
 - Centralize defaults in imgc/config.py
-- Support environment variables with IMGC_ prefix
+- Support environment variables with IMGC_ prefix (core) and IMGC_<PLUGIN>_ prefix (plugins)
 - Use extracted parsing functions (_env_str, _env_int, _env_float, _env_bool)
+- Plugin arguments declared via PluginArgument with automatic CLI/env integration
 - Document all configuration options in README.md
 
 ## Performance Guidelines
@@ -76,6 +83,8 @@ This is imgc (Intelligent Image Compression Watcher) - a cross-platform file sys
 - Use cooldown periods to prevent repeated processing
 - Monitor resource usage in multi-threaded scenarios
 - Optimize for common use cases (watch-only mode)
+- Plugin chain execution with timeout handling per processor
+- Efficient plugin discovery and argument parsing
 
 ## Security Considerations
 - Validate and normalize all user-provided paths
@@ -91,6 +100,35 @@ This is imgc (Intelligent Image Compression Watcher) - a cross-platform file sys
 - Document breaking changes prominently
 
 ## Common Patterns
+
+### Plugin Development
+```python
+from imgc.plugin_api import FileProcessor, ProcessorResult, PluginArgument
+
+class MyProcessor(FileProcessor):
+    def __init__(self):
+        self.quality = 80  # Default, overridden by configure_from_args
+    
+    @property
+    def name(self):
+        return "My Processor"
+    
+    @property
+    def supported_extensions(self):
+        return [".txt", ".log"]
+    
+    def get_plugin_arguments(self):
+        return [
+            PluginArgument("quality", int, 80, "Processing quality (1-100)"),
+            PluginArgument("enabled", bool, True, "Enable processing")
+        ]
+    
+    def get_plugin_namespace(self):
+        return "my-proc"  # Creates --my-proc-quality, IMGC_MY_PROC_QUALITY
+    
+    def process(self, file_path, context):
+        return ProcessorResult(success=True, message="Processed!")
+```
 
 ### Environment Variable Parsing
 ```python
@@ -133,13 +171,20 @@ if not path.exists():
 - Reimplementing logic in tests
 - Using print() instead of logging
 - Blocking operations without timeouts
+- Creating plugins without proper argument declarations
+- Hardcoding configuration values instead of using plugin arguments
+- Ignoring plugin validation errors
+- Creating multiple plugin managers when one can be reused
 
 ## File Organization
 - Keep modules focused and single-purpose
 - Use clear, descriptive file names
 - Group related functionality together
-- Separate concerns (CLI, core logic, configuration)
+- Separate concerns (CLI, plugin system, core logic, configuration)
 - Keep test files parallel to source structure
+- Plugin files should be self-contained with minimal dependencies
+- Built-in plugins in imgc/plugins/builtin/, user plugins in ./plugins/
+- Example plugins in examples/plugins/ for reference
 
 ## Release Process
 - Update CHANGELOG.md with all changes
@@ -153,12 +198,27 @@ if not path.exists():
 - Update PyInstaller hidden imports in Makefile if needed
 - Test cross-platform compatibility
 - Document any platform-specific requirements
+- Consider impact on plugin system and plugin loading
+
+## Plugin System Guidelines
+- All plugins must inherit from FileProcessor base class
+- Use PluginArgument for configurable parameters, not hardcoded values
+- Implement proper error handling in plugin process() methods
+- Use plugin namespaces to avoid argument conflicts
+- Test plugins both standalone and integrated
+- Document plugin arguments in help text
+- Handle missing dependencies gracefully in plugins
+- Use temporary files with .imgc.tmp suffix for processing
+- Implement proper file validation before processing
 
 ## Debugging Guidelines
 - Use appropriate log levels (debug, info, warning)
 - Include context in log messages (file paths, operation details)
 - Use structured logging for important events
 - Implement verbose modes for troubleshooting
+- Use --log-level debug to see plugin loading and execution details
+- Plugin validation errors are logged with specific error messages
+- Processor chain provides detailed execution statistics
 
 ## IDE and Tool Configuration
 - Use .venv for virtual environments
