@@ -116,10 +116,12 @@ class TestEndToEndFileProcessing:
 
         # Create test plugin with high priority
         plugin_file = plugin_dir / "priority_test.py"
+        # Create plugin content with proper escaping
+        base_path = str(tmp_path.parent.parent.parent).replace("\\", "\\\\")
         plugin_content = f"""
 import sys
 from pathlib import Path
-sys.path.insert(0, "{tmp_path.parent.parent.parent}")
+sys.path.insert(0, r"{base_path}")
 
 from imgc.plugin_api import FileProcessor, ProcessorResult
 
@@ -308,10 +310,12 @@ class TestPluginSystemIntegration:
 
         # Add a new plugin
         new_plugin = plugin_dir / "runtime_plugin.py"
+        # Create plugin content with proper path escaping
+        base_path = str(tmp_path.parent.parent.parent).replace("\\", "\\\\")
         plugin_content = f"""
 import sys
 from pathlib import Path
-sys.path.insert(0, "{tmp_path.parent.parent.parent}")
+sys.path.insert(0, r"{base_path}")
 
 from imgc.plugin_api import FileProcessor, ProcessorResult
 
