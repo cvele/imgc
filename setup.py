@@ -10,14 +10,16 @@ from setuptools import setup, find_packages
 
 # Read the README file for long description
 README_PATH = Path(__file__).parent / "README.md"
-long_description = README_PATH.read_text(encoding="utf-8") if README_PATH.exists() else ""
+long_description = (
+    README_PATH.read_text(encoding="utf-8") if README_PATH.exists() else ""
+)
 
 # Read requirements
 REQUIREMENTS_PATH = Path(__file__).parent / "requirements.txt"
 requirements = []
 if REQUIREMENTS_PATH.exists():
     requirements = [
-        line.strip() 
+        line.strip()
         for line in REQUIREMENTS_PATH.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     ]
